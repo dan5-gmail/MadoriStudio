@@ -4,7 +4,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
     const [isLoadingAuth, setIsLoadingAuth] = useState(false);
     const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
     const [authError, setAuthError] = useState(null);
@@ -22,8 +22,12 @@ export const AuthProvider = ({ children }) => {
     };
 
     const navigateToLogin = () => {
-        // ログイン画面への遷移処理を記述
-        window.location.href = '/login';
+        window.location.href = `${import.meta.env.BASE_URL}login`.replace(/\/{2,}/g, '/');
+    };
+
+    const checkUserAuth = async () => {
+        setAuthChecked(true);
+        setIsLoadingAuth(false);
     };
 
     return (
@@ -37,6 +41,7 @@ export const AuthProvider = ({ children }) => {
             authChecked,
             logout,
             navigateToLogin,
+            checkUserAuth,
             setUser,
             setIsAuthenticated
         }}>
