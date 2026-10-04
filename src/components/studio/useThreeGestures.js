@@ -1,0 +1,27 @@
+import { useEffect } from 'react';
+import * as THREE from 'three';
+import { defaults, uid } from '@/components/studio/designData';
+import snapPosition from '@/components/studio/snapPosition';
+import { disposeGroup, makeElement, floorBase } from '@/components/studio/threeGeometry';
+export default function useThreeGestures(rigRef, stateRef) {
+    useEffect(() => {
+        const rig = rigRef.current, canvas = rig.renderer.domElement, ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let gesture = null;
+        const point = ev => { const rect = canvas.getBoundingClientRect(); ndc.set((ev.clientX - rect.left) / rect.width * 2 - 1, -(ev.clientY - rect.top) / rect.height * 2 + 1); rig.camera.updateMatrixWorld(); rig.model.updateMatrixWorld(true); ray.setFromCamera(ndc, rig.camera); const base = floorBase(stateRef.current.s.project, stateRef.current.s.floor.id), p = new THREE.Vector3(); if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -base), p)) return null; const snap = stateRef.current.snap, round = n => snap ? Math.round(n * 10) / 10 : n; return { x: round(p.x), y: round(p.z), base }; };
+        const block = ev => { ev.stopImmediatePropagation(); ev.preventDefault(); };
+        const findGroup = object => { let group = object; while (group && !group.userData.elementId) group = group.parent; return group; };
+        const down = ev => {
+            const { s } = stateRef.current; if (ev.button !== 0 || s.tool === 'pan' || ev.altKey || ev.shiftKey) return; const p = point(ev); if (!p) return;
+            if (s.tool === 'select') { const groups = rig.model.children.filter(g => g.userData.active); const hits = ray.intersectObjects(groups, true).filter(h => h.object.isMesh); const hit = hits.find(h => s.floor.elements.find(e => e.id === findGroup(h.object)?.userData.elementId)?.type !== 'room') || hits[0]; const group = hit && findGroup(hit.object); if (!group) { s.setSelected(null); return; } const e = s.floor.elements.find(e => e.id === group.userData.elementId); if (!e) return; s.setSelected(e.id); gesture = { kind: 'move', element: { ...e }, start: p, pointerId: ev.pointerId, moved: false }; }
+            else { const d = defaults[s.tool]; if (!d) return; const [w, h, name, color] = d; const element = { id: uid(), type: s.tool, name, color, x: p.x, y: p.y, w, h }; Object.assign(element, snapPosition(element, s.floor.elements, stateRef.current.snap)); gesture = { kind: 'draw', element, start: { ...p, x: element.x, y: element.y }, pointerId: ev.pointerId, moved: false }; disposeGroup(rig.draft); rig.draft.add(makeElement(gesture.element, p.base, s.floor.height, true, true, false)); }
+            rig.controls.enabled = false; block(ev);
+        };
+        const move = ev => {
+            if (!gesture || ev.pointerId !== gesture.pointerId) return; const p = point(ev); if (!p) return; const { s } = stateRef.current, st = gesture.start, e = gesture.element; gesture.moved = Math.abs(p.x - st.x) + Math.abs(p.y - st.y) > 0.05;
+            if (gesture.kind === 'move') { gesture.patch = snapPosition({ ...e, x: Math.round((e.x + p.x - st.x) * 100) / 100, y: Math.round((e.y + p.y - st.y) * 100) / 100 }, s.floor.elements, stateRef.current.snap); const group = rig.model.children.find(g => g.userData.active && g.userData.elementId === e.id); if (group) { group.position.x = gesture.patch.x + e.w / 2; group.position.z = gesture.patch.y + e.h / 2; } }
+            else { let w = Math.abs(p.x - st.x), h = Math.abs(p.y - st.y); if (['room', 'wall'].includes(e.type) && gesture.moved) { if (e.type === 'wall') { if (w >= h) h = 0.12; else w = 0.12; } gesture.patch = { x: Math.min(p.x, st.x), y: Math.min(p.y, st.y), w: Math.max(0.1, w), h: Math.max(0.1, h) }; } gesture.patch = { ...gesture.patch, ...snapPosition({ ...e, ...gesture.patch }, s.floor.elements, stateRef.current.snap) }; disposeGroup(rig.draft); rig.draft.add(makeElement({ ...e, ...gesture.patch }, p.base, s.floor.height, true, true, false)); } block(ev);
+        };
+        const finish = (ev, cancel = false) => { if (!gesture || ev.pointerId !== gesture.pointerId) return; const { s } = stateRef.current, g = gesture; gesture = null; disposeGroup(rig.draft); rig.controls.enabled = true; if (cancel) { const group = rig.model.children.find(o => o.userData.active && o.userData.elementId === g.element.id); if (group) { group.position.x = g.element.x + g.element.w / 2; group.position.z = g.element.y + g.element.h / 2; } } else if (g.kind === 'move') { if (g.moved) s.updateElement(g.element.id, g.patch); } else { const e = { ...g.element, ...g.patch }; s.changeElements([...s.floor.elements, e]); s.setSelected(e.id); s.setTool('select'); } block(ev); };
+        const up = ev => finish(ev), cancel = ev => finish(ev, true); canvas.addEventListener('pointerdown', down, true); window.addEventListener('pointermove', move, true); window.addEventListener('pointerup', up, true); window.addEventListener('pointercancel', cancel, true);
+        return () => { canvas.removeEventListener('pointerdown', down, true); window.removeEventListener('pointermove', move, true); window.removeEventListener('pointerup', up, true); window.removeEventListener('pointercancel', cancel, true); };
+    }, []);
+}
