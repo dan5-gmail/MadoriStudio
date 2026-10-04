@@ -5,6 +5,10 @@ import path from 'path' // ★追加
 // https://vite.dev/config/
 export default defineConfig({
     base: '/MadoriStudio/',
+    build: {
+        outDir: 'docs',
+        emptyOutDir: true,
+    },
     plugins: [
         react(),
     ],

@@ -1,0 +1,8 @@
+{
+    "name": "MadoriStudio",
+    "short_name": "MadoriStudio",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#f7f8f2",
+    "theme_color": "#55754f"
+}
