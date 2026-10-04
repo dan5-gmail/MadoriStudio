@@ -3,17 +3,16 @@
 
 <head>
     <meta charset="UTF-8" />
-    <!-- 先頭の / を ./ に変更する -->
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="manifest" href="./manifest.json" />
+    <!-- manifest.json のエラーを消すか、使わないなら一旦消す・用意する -->
     <title>MadoriStudio</title>
 </head>
 
 <body>
     <div id="root"></div>
-    <!-- 先頭の / を ./ に変更する -->
-    <script type="module" src="./src/main.jsx"></script>
+    <!-- ここを元の /src/main.jsx に戻す -->
+    <script type="module" src="/src/main.jsx"></script>
 </body>
 
 </html>
