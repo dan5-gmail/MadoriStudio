@@ -6,16 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MadoriStudio</title>
 
-    <!-- 1. ブラウザのタブに表示するアイコン -->
-    <link rel="icon" type="image/png" href="/MadoriStudio/icon.png" />
-
-    <!-- 2. iPhone / iPad のホーム画面に追加したときのアイコン -->
-    <link rel="apple-touch-icon" href="/MadoriStudio/icon.png" />
+    <!-- アプリのアイコン（相対パス、または通常の絶対パス） -->
+    <link rel="icon" type="image/png" href="./icon.png" />
+    <link rel="apple-touch-icon" href="./icon.png" />
 </head>
 
 <body>
     <div id="root"></div>
-    <script type="module" src="/MadoriStudio/src/main.jsx"></script>
+    <!-- 相対パス（./src/main.jsx）に変更 -->
+    <script type="module" src="./src/main.jsx"></script>
 </body>
 
 </html>
