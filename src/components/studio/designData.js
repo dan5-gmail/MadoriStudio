@@ -1,3 +1,4 @@
+//@ts-nocheck
 export const uid = () => crypto.randomUUID();
 export const tools = [{ id: 'select', name: '選択', icon: 'MousePointer2' }, { id: 'room', name: '部屋', icon: 'Square' }, { id: 'wall', name: '壁', icon: 'Minus' }, { id: 'door', name: 'ドア', icon: 'DoorOpen' }, { id: 'window', name: '窓', icon: 'PanelTop' }, { id: 'column', name: '柱', icon: 'Columns3' }, { id: 'stairs', name: '階段', icon: 'Footprints' }, { id: 'furniture', name: '家具', icon: 'Armchair' }];
 export const colors = ['#ece7dc', '#dde7df', '#dfe8eb', '#eae2d9', '#e5e1ec', '#f1ead4'];
@@ -10,3 +11,10 @@ export function newProject(type = '一軒家', blank = false) {
     return { name: type === '一軒家' ? '光が集まる家' : type === 'マンション' ? 'マンションの住まい' : 'オフィスビル計画', building_type: type, structure: type === '一軒家' ? '木造' : 'RC造', floors: [{ id: uid(), name: '1F', height: 2.7, elements: blank ? [] : elements }] };
 }
 export function downloadPlan(svg, name) { const copy = svg.cloneNode(true); copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name + '.svg'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+export function downloadJson(data, name) { const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+export function normalizeProject(p) {
+    if (!p || typeof p !== 'object' || !Array.isArray(p.floors) || !p.floors.length) return null;
+    const num = n => { const v = Number(n); return Number.isFinite(v) ? v : null; };
+    const floors = p.floors.map((f, i) => ({ id: typeof f?.id === 'string' && f.id ? f.id : uid(), name: f?.name || `${i + 1}F`, height: num(f?.height) ?? 2.7, elements: Array.isArray(f?.elements) ? f.elements.filter(e => e && typeof e === 'object').map(e => { const el = { id: typeof e.id === 'string' && e.id ? e.id : uid(), type: String(e.type || 'room'), name: String(e.name || '要素'), x: num(e.x) ?? 0, y: num(e.y) ?? 0, w: num(e.w) ?? 1, h: num(e.h) ?? 1, color: e.color || '#ece7dc' }; if (num(e.object_height) != null) el.object_height = num(e.object_height); if (num(e.elevation) != null) el.elevation = num(e.elevation); if (num(e.rotation) != null) el.rotation = num(e.rotation); return el; }) : [] }));
+    return { name: String(p.name || '読み込んだプロジェクト'), building_type: ['一軒家', 'マンション', 'ビル'].includes(p.building_type) ? p.building_type : '一軒家', structure: ['木造', '鉄骨造', 'RC造'].includes(p.structure) ? p.structure : '木造', floors };
+}

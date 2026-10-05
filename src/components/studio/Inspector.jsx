@@ -1,3 +1,4 @@
+//@ts-nocheck
 import React from 'react';
 import { SlidersHorizontal, Copy, Trash2, House, Move, Layers3 } from 'lucide-react';
 import { colors } from '@/components/studio/designData';
